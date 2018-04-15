@@ -58,7 +58,7 @@ object Main extends JFXApp {
                 style = "-fx-font-size: 48px"
               },
               new Text {
-                text = "Text to encrypt"
+                text = "Text to encrypt/decrypt"
                 style = "-fx-font-size: 16px"
                 fill = Color.Gray
               },

@@ -1,6 +1,6 @@
 name := "aes-encrypter"
 
-version := "0.1"
+version := "1.0"
 
 scalaVersion := "2.12.5"
 val tsecV = "0.0.1-M11"
