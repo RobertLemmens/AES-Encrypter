@@ -6,12 +6,17 @@ import pureconfig.error.ConfigReaderFailures
   *         14-4-18
   */
 
-case class UIConfig(title: String, width: Int, height: Int)
+case class UIConfig(title: String)
 
 object UIConfig {
 
   import pureconfig._
 
+  /**
+    * Load application.conf as a case class
+    *
+    * @return
+    */
   def load: Either[ConfigReaderFailures, UIConfig] = {
     loadConfig[UIConfig]("gui")
   }

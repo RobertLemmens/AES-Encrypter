@@ -2,30 +2,47 @@ package nl.codebulb.aese
 
 import nl.codebulb.aese.config.UIConfig
 import nl.codebulb.aese.cryptography.AESEncrypter
+import nl.codebulb.aese.gui.QRView
+import nl.codebulb.aese.util.QRGenerator
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
-import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
 import scalafx.scene.Scene
 import scalafx.scene.control.{Button, TextArea, TextField}
 import scalafx.scene.layout.{HBox, VBox}
-import scalafx.scene.paint.{Color, LinearGradient, Stops}
+import scalafx.scene.paint.Color
 import scalafx.scene.text.Text
 import scalafx.Includes._
+import scalafx.scene.input.{Clipboard, ClipboardContent}
+
 /**
   * @author Robert Lemmens 
   *         14-4-18
+  *
+  *
+  *  App is launched from here. Still a bit messy with all the scalaFX stuff in here.
   */
 object Main extends JFXApp {
 
+  // Config
   val config = for {
     conf <- UIConfig.load
   } yield conf
+  val appTitle: String = config.fold(_ => "Error loading config...", r => r.title)
 
+  // Util inits
   val AESTools = new AESEncrypter
+  val QRGenerator = new QRGenerator
 
-  val appTitle: String = config.fold(l => "error", r => r.title)
+  // ScalaFX stuff
+  val payloadBox = new TextField()
+  val passwordBox = new TextField()
+  val outputBox = new TextArea {
+    text = ""
+    editable = false
+  }
 
+  // Main stage
   stage = new PrimaryStage {
     title = appTitle
     scene = new Scene {
@@ -45,17 +62,13 @@ object Main extends JFXApp {
                 style = "-fx-font-size: 16px"
                 fill = Color.Gray
               },
-              new TextField {
-                text = "Payload"
-              },
+              payloadBox,
               new Text {
                 text = "Password"
                 style = "-fx-font-size: 16px"
                 fill = Color.Gray
               },
-              new TextField {
-                text = "Password"
-              },
+              passwordBox,
               new HBox {
                 spacing = 10
                 children = Seq(
@@ -70,10 +83,9 @@ object Main extends JFXApp {
                         "-fx-padding: 15 45 15 45;"
                     }
                     onAction = handle {
-                      println("Encrypting")
-                      val encrypted = AESTools.encrypt("some text pls", "key")
-                      val test = encrypted.unsafeRunSync()
-                      println(test)
+                      println("Encrypting: " + payloadBox.text.value + " - " + passwordBox.text.value)
+                      val encrypted = AESTools.encrypt(payloadBox.text.value, passwordBox.text.value)
+                      outputBox.text = encrypted.unsafeRunSync()
                       println("done")
                     }
                   },
@@ -87,6 +99,12 @@ object Main extends JFXApp {
                         "-fx-background-radius: 0;" +
                         "-fx-padding: 15 45 15 45;"
                     }
+                    onAction = handle {
+                      println("Decrypting: " + payloadBox.text.value + " - " + passwordBox.text.value)
+                      val decrypted = AESTools.decrypt(payloadBox.text.value, passwordBox.text.value)
+                      outputBox.text = decrypted.unsafeRunSync()
+                      println("done")
+                    }
                   }
                 )
               },
@@ -95,10 +113,7 @@ object Main extends JFXApp {
                 style = "-fx-font-size: 16px"
                 fill = Color.Gray
               },
-              new TextArea {
-                text = ""
-                editable = false
-              },
+              outputBox,
               new HBox {
                 spacing = 10
                 children = Seq(
@@ -112,6 +127,12 @@ object Main extends JFXApp {
                         "-fx-background-radius: 50;" +
                         "-fx-padding: 15 15 15 15;"
                     }
+                    onAction = handle {
+                      println("Generating QR Code")
+                      val file = QRGenerator.generateQRCode(outputBox.text.value)
+                      println(file.getAbsolutePath)
+                      QRView.showQRCode(file)
+                    }
                   },
                   new Button {
                     text = "Copy"
@@ -123,6 +144,12 @@ object Main extends JFXApp {
                         "-fx-background-radius: 50;" +
                         "-fx-padding: 15 15 15 15;"
                     }
+                    onAction = handle {
+                      println("Copying to clipboard")
+                      val clipBoardContent = new ClipboardContent()
+                      clipBoardContent.putString(outputBox.text.value)
+                      Clipboard.systemClipboard.setContent(clipBoardContent)
+                    }
                   }
                 )
               },
@@ -132,6 +159,8 @@ object Main extends JFXApp {
       }
     }
   }
+
+
 
 
 }
